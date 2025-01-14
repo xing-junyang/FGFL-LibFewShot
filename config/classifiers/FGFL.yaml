@@ -1,0 +1,10 @@
+name: FGFL
+kwargs:
+  hdim: 640                     # 特征维度，与 ResNet12 的输出一致
+  temperature: 1.25             # 温度系数，控制嵌入空间分布
+  temperature2: 32              # 高温系数，用于多层次度量学习
+  balance: 0.1                  # 平衡参数，控制损失之间的比重
+  use_freq_mask: True           # 是否启用频域掩码
+  lambda_triplet: 0.1           # 样本级三元组损失的权重
+  lambda_contrastive: 0.1       # 任务级对比损失的权重
+  lambda_aug: 0.1               # 增强分类损失的权重

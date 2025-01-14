@@ -1,0 +1,29 @@
+includes:
+  - headers/data.yaml
+  - headers/device.yaml
+  - headers/misc.yaml
+  - headers/model.yaml
+  - headers/optimizer.yaml
+  - classifiers/FGFL.yaml
+  - backbones/resnet12.yaml
+
+classifier:
+  name: FGFL
+  kwargs:
+    hdim: 640                     # 使用 ResNet12 的特征维度
+    temperature: 1.25             # 提升特征嵌入的区分度
+    temperature2: 32              # 论文中指定的高温系数
+    balance: 0.1                  # 权衡不同损失项的平衡系数
+    mode: euclidean               # 欧几里得度量方法
+    use_freq_mask: True           # 是否启用频域掩码生成
+    lambda_triplet: 0.1           # 三元组损失的权重
+    lambda_contrastive: 0.1       # 对比损失的权重
+    lambda_aug: 0.1               # 数据增强分类损失的权重
+
+backbone:
+  name: ResNet12                  # 论文中指定的标准 backbone
+  kwargs:
+    keep_prob: 0.0                # 不使用 dropout
+    avg_pool: True                # 启用全局平均池化
+    is_flatten: True              # 将最后的特征展平为 1D 向量
+    freq_branch: True             # 是否包含频域分支（FGFL 专用）
