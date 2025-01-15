@@ -16,6 +16,13 @@ class FrequencyMaskGenerator(nn.Module):
 
         # Generate Grad-CAM attention maps
         batch_size = features.size(0)
+        # Ensure features require gradients
+        features.requires_grad_(True)
+
+        # Compute some dummy loss to get gradients
+        dummy_loss = features.sum()
+        dummy_loss.backward(retain_graph=True)
+
         cam_weights = F.adaptive_avg_pool2d(features.grad, 1)
         attention = torch.zeros_like(features)
         for i in range(batch_size):
@@ -99,7 +106,7 @@ class FGFL(MetricModel):
 
         # Extract features
         feat = self.emb_func(image)
-        support_feat, query_feat, support_target, query_target = self.split_by_episode(feat, mode=1)
+        support_feat, query_feat, support_target, query_target = self.split_by_episode(feat, mode=2)
 
         # Generate frequency masks and masked images
         masked_support, unmasked_support, _ = self.freq_mask(support_feat, feat, support_target)
@@ -123,7 +130,7 @@ class FGFL(MetricModel):
 
         # Extract features
         feat = self.emb_func(image)
-        support_feat, query_feat, support_target, query_target = self.split_by_episode(feat, mode=1)
+        support_feat, query_feat, support_target, query_target = self.split_by_episode(feat, mode=2)
 
         # Generate frequency masks and masked images
         masked_support, unmasked_support, _ = self.freq_mask(support_feat, feat, support_target)
