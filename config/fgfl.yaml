@@ -26,4 +26,4 @@ backbone:
     keep_prob: 0.0                # 不使用 dropout
     avg_pool: True                # 启用全局平均池化
     is_flatten: True              # 将最后的特征展平为 1D 向量
-    freq_branch: True             # 是否包含频域分支（FGFL 专用）
+#    freq_branch: True             # 是否包含频域分支（FGFL 专用）
