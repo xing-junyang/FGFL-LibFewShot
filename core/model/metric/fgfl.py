@@ -106,7 +106,7 @@ class FGFL(MetricModel):
 
         # Extract features
         feat = self.emb_func(image)
-        support_feat, query_feat, support_target, query_target = self.split_by_episode(feat, mode=2)
+        support_feat, query_feat, support_target, query_target = self.split_by_episode(feat, mode=1)
 
         # Generate frequency masks and masked images
         masked_support, unmasked_support, _ = self.freq_mask(support_feat, feat, support_target)
@@ -130,7 +130,7 @@ class FGFL(MetricModel):
 
         # Extract features
         feat = self.emb_func(image)
-        support_feat, query_feat, support_target, query_target = self.split_by_episode(feat, mode=2)
+        support_feat, query_feat, support_target, query_target = self.split_by_episode(feat, mode=1)
 
         # Generate frequency masks and masked images
         masked_support, unmasked_support, _ = self.freq_mask(support_feat, feat, support_target)
