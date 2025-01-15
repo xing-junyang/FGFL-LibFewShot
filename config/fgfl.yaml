@@ -21,7 +21,7 @@ classifier:
     lambda_aug: 0.1               # 数据增强分类损失的权重
 
 backbone:
-  name: ResNet12                  # 论文中指定的标准 backbone
+  name: resnet12 # 论文中指定的标准 backbone
   kwargs:
     keep_prob: 0.0                # 不使用 dropout
     avg_pool: True                # 启用全局平均池化
