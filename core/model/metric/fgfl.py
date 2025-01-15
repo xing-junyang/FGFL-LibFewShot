@@ -32,6 +32,14 @@ class FrequencyMaskGenerator(nn.Module):
         if len(attention.shape) < len(x.shape):
             attention = attention.unsqueeze(1)
 
+        # Debug: print attention and x shape
+        print("attention shape:",attention.shape)
+        print("x shape:",x.shape)
+
+        # Debug: print attention and x map
+        print("attention:",attention)
+        print("x:",x)
+
         # Upsample attention maps
         attention = F.interpolate(attention, size=x.shape[-2:], mode='bilinear', align_corners=False)
 
