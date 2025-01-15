@@ -41,7 +41,7 @@ class FrequencyMaskGenerator(nn.Module):
         print("x:",x)
 
         # Upsample attention maps
-        attention = F.interpolate(attention, size=x.shape[-1:], mode='bilinear', align_corners=False)
+        attention = F.interpolate(attention, size=x.shape[-2:], mode='bilinear', align_corners=False)
 
         # Generate frequency mask
         mask = 1 - torch.sigmoid(attention)
