@@ -28,6 +28,10 @@ class FrequencyMaskGenerator(nn.Module):
         # Normalize attention
         attention = attention / (attention.max() + 1e-8)
 
+
+        if len(attention.shape) < len(x.shape):
+            attention = attention.unsqueeze(1)
+
         # Upsample attention maps
         attention = F.interpolate(attention, size=x.shape[-2:], mode='bilinear', align_corners=False)
 
