@@ -9,24 +9,24 @@ import numpy as np
 class FrequencyMaskGenerator(nn.Module):
     def __init__(self):
         super().__init__()
+        self.gap = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x, features, labels):
         # DCT transform
         dct = torch.fft.rfft2(x)
 
-        # Generate Grad-CAM attention maps
+        # Generate Grad-CAM attention maps using GAP instead of gradients
         batch_size = features.size(0)
-        # Ensure features require gradients
-        features.requires_grad_(True)
+        channel_weights = self.gap(features)  # Use GAP directly instead of gradients
 
-        # Compute some dummy loss to get gradients
-        dummy_loss = features.sum()
-        dummy_loss.backward(retain_graph=True)
-
-        cam_weights = F.adaptive_avg_pool2d(features.grad, 1)
         attention = torch.zeros_like(features)
         for i in range(batch_size):
-            attention[i] = F.relu(torch.sum(features[i] * cam_weights[i]))
+            # Weight each channel and sum
+            weighted_features = features[i] * channel_weights[i]
+            attention[i] = F.relu(weighted_features.sum(dim=0, keepdim=True))
+
+        # Normalize attention
+        attention = attention / (attention.max() + 1e-8)
 
         # Upsample attention maps
         attention = F.interpolate(attention, size=x.shape[-2:], mode='bilinear', align_corners=False)
@@ -34,16 +34,19 @@ class FrequencyMaskGenerator(nn.Module):
         # Generate frequency mask
         mask = 1 - torch.sigmoid(attention)
 
+        # Expand mask to match DCT dimensions
+        if len(mask.shape) < len(dct.shape):
+            mask = mask.unsqueeze(-1).expand_as(dct)
+
         # Apply mask in frequency domain
         masked_dct = dct * mask
         unmasked_dct = dct * (1 - mask)
 
         # Inverse DCT
-        masked_img = torch.fft.irfft2(masked_dct)
-        unmasked_img = torch.fft.irfft2(unmasked_dct)
+        masked_img = torch.fft.irfft2(masked_dct, s=x.shape[-2:])
+        unmasked_img = torch.fft.irfft2(unmasked_dct, s=x.shape[-2:])
 
         return masked_img, unmasked_img, mask
-
 
 class MultiLevelMetrics(nn.Module):
     def __init__(self, temperature=0.1):
@@ -126,15 +129,26 @@ class FGFL(MetricModel):
         image, global_target = batch
         image = image.to(self.device)
 
-        episode_size = image.size(0) // (self.way_num * (self.shot_num + self.query_num))
-
         # Extract features
-        feat = self.emb_func(image)
+        with torch.no_grad():  # 提取特征时不需要梯度
+            feat = self.emb_func(image)
         support_feat, query_feat, support_target, query_target = self.split_by_episode(feat, mode=1)
 
+        # 确保特征图维度正确
+        if len(support_feat.shape) == 2:
+            support_feat = support_feat.view(*support_feat.shape, 1, 1)
+        if len(query_feat.shape) == 2:
+            query_feat = query_feat.view(*query_feat.shape, 1, 1)
+
         # Generate frequency masks and masked images
-        masked_support, unmasked_support, _ = self.freq_mask(support_feat, feat, support_target)
-        masked_query, unmasked_query, _ = self.freq_mask(query_feat, feat, query_target)
+        try:
+            masked_support, unmasked_support, _ = self.freq_mask(support_feat, support_feat, support_target)
+            masked_query, unmasked_query, _ = self.freq_mask(query_feat, query_feat, query_target)
+        except RuntimeError as e:
+            print(f"Error in mask generation: {e}")
+            print(f"Support feat shape: {support_feat.shape}")
+            print(f"Query feat shape: {query_feat.shape}")
+            raise
 
         # Calculate multi-level metrics
         losses = self.metrics(support_feat, query_feat, support_target, query_target,
